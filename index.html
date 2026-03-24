@@ -639,10 +639,44 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-text { font-size: 15px; color: var(--text2); }
 
+  /* BOTTOM NAV (mobile only) */
+  .bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    z-index: 150;
+    padding: 8px 0 12px;
+    justify-content: space-around;
+  }
+  .bnav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 4px 16px;
+    border-radius: 12px;
+    border: none;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .bnav-item .bnav-icon { font-size: 20px; }
+  .bnav-item .bnav-label { font-size: 10px; color: var(--text3); font-weight: 500; }
+  .bnav-item.active .bnav-label { color: var(--green); }
+  .bnav-item.active .bnav-icon { filter: none; }
+  .bnav-item.active { background: var(--green-light); }
+
   @media (max-width: 600px) {
     .nav-tabs { display: none; }
     .hero { padding: 60px 24px 40px; }
     .features-grid { padding: 24px 16px; }
+    .bottom-nav { display: flex; }
+    body { padding-bottom: 70px; }
+    nav { padding: 0 16px; }
+    .lang-btn { font-size: 12px; padding: 5px 10px; }
   }
 </style>
 </head>
@@ -665,6 +699,22 @@
   </div>
   <button class="lang-btn" onclick="cycleLang()">🌐 <span id="lang-label">English</span></button>
 </nav>
+
+<!-- BOTTOM NAV (mobile only) -->
+<div class="bottom-nav" id="bottom-nav">
+  <button class="bnav-item active" onclick="showPage('home',this,'bnav')">
+    <span class="bnav-icon">🏠</span><span class="bnav-label">Home</span>
+  </button>
+  <button class="bnav-item" onclick="showPage('checker',this,'bnav')">
+    <span class="bnav-icon">🩺</span><span class="bnav-label">Symptoms</span>
+  </button>
+  <button class="bnav-item" onclick="showPage('tracker',this,'bnav')">
+    <span class="bnav-icon">📊</span><span class="bnav-label">Tracker</span>
+  </button>
+  <button class="bnav-item" onclick="showPage('about',this,'bnav')">
+    <span class="bnav-icon">ℹ️</span><span class="bnav-label">About</span>
+  </button>
+</div>
 
 <!-- ===== HOME PAGE ===== -->
 <div class="page active" id="page-home">
@@ -883,12 +933,26 @@
 </div>
 
 <script>
+// ---- CONFIG ----
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxWoIx6cMJG6qRXyuVFU67f-Ql0tLnqzo4Eoy0K6xHnoJXi2XTHnHequIg2OHzMyJzo/exec';
+const GEMINI_FUNCTION_URL = '/.netlify/functions/gemini';
+
+// ---- CHAT HISTORY (for multi-turn conversation) ----
+let chatHistory = [];
+let lastSymptomQuery = '';
+let lastAIResponse = '';
+
 // ---- PAGE ROUTING ----
-function showPage(id, btn) {
+function showPage(id, btn, source) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll(".bnav-item").forEach(t => t.classList.remove("active"));
   document.getElementById('page-' + id).classList.add('active');
-  if (btn) btn.classList.add('active');
+  if (btn) btn.classList.add("active");
+  const map = ["home","checker","tracker","about"];
+  const idx = map.indexOf(id);
+  if (source === "bnav") { const tabs = document.querySelectorAll(".nav-tab"); if (idx>-1 && tabs[idx]) tabs[idx].classList.add("active"); }
+  else { const bn = document.querySelectorAll(".bnav-item"); if (idx>-1 && bn[idx]) bn[idx].classList.add("active"); }
   window.scrollTo(0, 0);
 }
 
@@ -914,7 +978,179 @@ function addQuickTag(tag) {
   inp.focus();
 }
 
-// ---- SYMPTOM KNOWLEDGE BASE ----
+// ---- CHAT UI HELPERS ----
+function appendMsg(content, isUser) {
+  const box = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg ' + (isUser ? 'user' : 'bot');
+  div.innerHTML = `<div class="msg-av">${isUser ? 'U' : 'S'}</div><div class="msg-bubble">${content}</div>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function showTyping() {
+  const box = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.id = 'typing-indicator';
+  div.innerHTML = `<div class="msg-av">S</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+function removeTyping() {
+  const t = document.getElementById('typing-indicator');
+  if (t) t.remove();
+}
+
+function showLoader(text) {
+  document.getElementById('loader-text').textContent = text;
+  document.getElementById('loader').classList.add('visible');
+}
+function hideLoader() {
+  document.getElementById('loader').classList.remove('visible');
+}
+
+// ---- GEMINI API CALL ----
+async function callGemini(userMessage) {
+  const response = await fetch(GEMINI_FUNCTION_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message: userMessage,
+      history: chatHistory
+    })
+  });
+  const data = await response.json();
+  if (data.error) throw new Error(data.error);
+  return data.response;
+}
+
+// ---- FORMAT AI RESPONSE FOR DISPLAY ----
+function formatResponse(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br/>');
+}
+
+// ---- SEND MESSAGE ----
+async function sendMessage() {
+  const inp = document.getElementById('chat-input');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  inp.disabled = true;
+  document.querySelector('.send-btn').disabled = true;
+
+  appendMsg(text, true);
+  lastSymptomQuery = text;
+
+  showTyping();
+
+  try {
+    const aiResponse = await callGemini(text);
+    removeTyping();
+
+    // Save to history for multi-turn conversation
+    chatHistory.push({ role: 'user', text });
+    chatHistory.push({ role: 'model', text: aiResponse });
+    lastAIResponse = aiResponse;
+
+    appendMsg(formatResponse(aiResponse), false);
+
+    // Show result panel with AI badge
+    showAIResult(aiResponse);
+
+    // Log to Google Sheets (symptom only, no personal data)
+    logToSheets({ symptom: text, response: aiResponse.substring(0, 200) });
+
+  } catch (err) {
+    removeTyping();
+    appendMsg('⚠️ Sorry, I had trouble connecting. Please check your internet and try again.', false);
+    console.error('Gemini error:', err);
+  }
+
+  inp.disabled = false;
+  document.querySelector('.send-btn').disabled = false;
+  inp.focus();
+}
+
+document.getElementById('chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendMessage();
+});
+
+// ---- SHOW AI RESULT PANEL ----
+function showAIResult(responseText) {
+  const panel = document.getElementById('result-panel');
+  const badge = document.getElementById('urgency-badge');
+  const urgencyText = document.getElementById('urgency-text');
+
+  // Detect urgency from response
+  let urgency = 'monitor';
+  const lower = responseText.toLowerCase();
+  if (lower.includes('see doctor now') || lower.includes('emergency') || lower.includes('112') || lower.includes('hospital immediately') || lower.includes('urgent')) {
+    urgency = 'urgent';
+  } else if (lower.includes('safe') || lower.includes('home care') || lower.includes('घर पर')) {
+    urgency = 'safe';
+  }
+
+  badge.className = 'urgency-badge ' + urgency;
+  const urgencyMap = {
+    safe: '🟢 Safe — Home Care',
+    monitor: '🟡 Monitor Closely',
+    urgent: '🔴 See Doctor NOW!'
+  };
+  urgencyText.textContent = urgencyMap[urgency];
+
+  // Extract sections from AI response
+  const condList = document.getElementById('condition-list');
+  condList.innerHTML = `<div class="condition-item"><div class="condition-dot" style="background:#1a9c65"></div><div>AI-powered analysis based on your symptoms</div></div>`;
+
+  const actList = document.getElementById('action-list');
+
+  // Parse Allopathic, Ayurvedic, Home from response
+  let allopathic = '', ayurvedic = '', home = '';
+
+  const alloMatch = responseText.match(/💊[^🌿🏠💡\n]*(?:\n[^🌿🏠💡💊]*)?/);
+  const ayurMatch = responseText.match(/🌿[^💊🏠💡\n]*(?:\n[^💊🏠💡🌿]*)?/);
+  const homeMatch = responseText.match(/🏠[^💊🌿💡\n]*(?:\n[^💊🌿💡🏠]*)?/);
+
+  if (alloMatch) allopathic = alloMatch[0].replace('💊', '').trim();
+  if (ayurMatch) ayurvedic = ayurMatch[0].replace('🌿', '').trim();
+  if (homeMatch) home = homeMatch[0].replace('🏠', '').trim();
+
+  actList.innerHTML = `
+    ${allopathic ? `<div class="action-item allopathic"><div class="action-icon">💊</div><div>${allopathic}</div></div>` : ''}
+    ${ayurvedic ? `<div class="action-item ayurveda"><div class="action-icon">🌿</div><div>${ayurvedic}</div></div>` : ''}
+    ${home ? `<div class="action-item home"><div class="action-icon">🏠</div><div>${home}</div></div>` : ''}
+    ${!allopathic && !ayurvedic && !home ? `<div class="action-item allopathic"><div class="action-icon">🩺</div><div>${responseText.substring(0, 300)}</div></div>` : ''}
+  `;
+
+  // Extract insight
+  const insightMatch = responseText.match(/💡[^\n]*/);
+  document.getElementById('insight-text').textContent = insightMatch
+    ? insightMatch[0].replace('💡', '').replace('Insight:', '').trim()
+    : 'Please consult a qualified doctor if symptoms persist or worsen.';
+
+  panel.classList.add('visible');
+  setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+}
+
+// ---- GOOGLE SHEETS LOGGING ----
+async function logToSheets(data) {
+  try {
+    await fetch(SHEETS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+  } catch (e) {
+    // Silent fail — logging is non-critical
+    console.log('Sheets log failed silently:', e);
+  }
+}
+
+// ---- SYMPTOM KNOWLEDGE BASE (kept as fallback) ----
 const KB = [
   {
     triggers: ['chest pain','chest','heart','cardiac','seene mein dard'],
@@ -1031,114 +1267,7 @@ function matchSymptoms(text) {
   return DEFAULT_RESPONSE;
 }
 
-// ---- CHAT ----
-const HINDI_WORDS = ['bukhar','sar','dard','thaka','sir','pet','khansi','kamzori'];
-function detectHindi(text) {
-  return HINDI_WORDS.some(w => text.toLowerCase().includes(w));
-}
 
-function showLoader(text) {
-  document.getElementById('loader-text').textContent = text;
-  document.getElementById('loader').classList.add('visible');
-}
-function hideLoader() {
-  document.getElementById('loader').classList.remove('visible');
-}
-
-function appendMsg(content, isUser) {
-  const box = document.getElementById('chat-messages');
-  const div = document.createElement('div');
-  div.className = 'msg ' + (isUser ? 'user' : 'bot');
-  div.innerHTML = `<div class="msg-av">${isUser ? 'U' : 'S'}</div><div class="msg-bubble">${content}</div>`;
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
-}
-
-function showTyping() {
-  const box = document.getElementById('chat-messages');
-  const div = document.createElement('div');
-  div.className = 'msg bot';
-  div.id = 'typing-indicator';
-  div.innerHTML = `<div class="msg-av">S</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
-}
-function removeTyping() {
-  const t = document.getElementById('typing-indicator');
-  if (t) t.remove();
-}
-
-function sendMessage() {
-  const inp = document.getElementById('chat-input');
-  const text = inp.value.trim();
-  if (!text) return;
-  inp.value = '';
-
-  appendMsg(text, true);
-
-  const isHindi = detectHindi(text);
-  const confirmMsg = isHindi
-    ? '🙏 मैं आपके लक्षण समझ रहा हूँ… (<em>' + text + '</em>) — विश्लेषण हो रहा है।'
-    : '🙏 Got it — analysing your symptoms: <em>"' + text + '"</em>. Give me a moment.';
-
-  setTimeout(() => {
-    showTyping();
-    setTimeout(() => {
-      removeTyping();
-      appendMsg(confirmMsg, false);
-      setTimeout(() => {
-        showTyping();
-        setTimeout(() => {
-          removeTyping();
-          const result = matchSymptoms(text);
-          renderResult(result, isHindi);
-          const doneMsg = isHindi
-            ? '✅ विश्लेषण पूरा हुआ। नीचे आपकी रिपोर्ट देखें।'
-            : '✅ Analysis complete. See your detailed report below.';
-          appendMsg(doneMsg, false);
-        }, 1800);
-      }, 600);
-    }, 1200);
-  }, 300);
-}
-
-document.getElementById('chat-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') sendMessage();
-});
-
-function renderResult(r, isHindi) {
-  const panel = document.getElementById('result-panel');
-  const badge = document.getElementById('urgency-badge');
-  const urgencyText = document.getElementById('urgency-text');
-
-  badge.className = 'urgency-badge ' + r.urgency;
-  const urgencyMap = {
-    safe: isHindi ? '🟢 घर पर देखभाल' : '🟢 Safe — Home Care',
-    monitor: isHindi ? '🟡 निगरानी करें' : '🟡 Monitor Closely',
-    urgent: isHindi ? '🔴 तुरंत डॉक्टर देखें!' : '🔴 See Doctor NOW!'
-  };
-  urgencyText.textContent = urgencyMap[r.urgency] || urgencyMap.monitor;
-
-  const condList = document.getElementById('condition-list');
-  condList.innerHTML = r.conditions.map(c => `
-    <div class="condition-item">
-      <div class="condition-dot" style="background:${c.color}"></div>
-      <div><strong>${c.name}</strong> — ${c.prob}</div>
-    </div>
-  `).join('');
-
-  const actList = document.getElementById('action-list');
-  actList.innerHTML = r.actions.map(a => `
-    <div class="action-item ${a.type}">
-      <div class="action-icon">${a.icon}</div>
-      <div>${a.text}</div>
-    </div>
-  `).join('');
-
-  document.getElementById('insight-text').textContent = r.insight;
-  panel.classList.add('visible');
-  setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-}
 
 // ---- TRACKER ----
 function updateTracker(type, val) {
@@ -1186,21 +1315,36 @@ function generateInsights() {
     '<div class="insight-item">✅ <div>Your current habits look balanced. Keep it up!</div></div>';
 }
 
-function logData() {
+async function logData() {
   const btn = document.querySelector('.log-btn');
+  const sleep = document.getElementById('sleep-val').textContent;
+  const water = document.getElementById('water-val').textContent;
+  const stress = document.getElementById('stress-val').textContent;
+  const moodBtn = document.querySelector('.mood-btn.selected');
+  const mood = moodBtn ? moodBtn.querySelector('span:last-child').textContent : 'Not set';
+
+  btn.textContent = '⏳ Saving...';
+  btn.disabled = true;
+
+  await logToSheets({
+    sleep,
+    water,
+    stress,
+    mood,
+    symptom: lastSymptomQuery || '',
+    response: ''
+  });
+
   btn.textContent = '✅ Logged Successfully!';
   btn.style.background = '#0f5c3a';
   setTimeout(() => {
     btn.textContent = 'Save Today\'s Log ✓';
     btn.style.background = '';
+    btn.disabled = false;
   }, 2000);
 }
 
-// Fix typo in sendMessage
-(function(){
-  const fn = sendMessage.toString();
-  // patch scrollHeight typo above — already correct in script
-})();
+
 </script>
 </body>
 </html>
