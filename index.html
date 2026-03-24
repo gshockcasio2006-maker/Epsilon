@@ -1086,7 +1086,7 @@ function showAIResult(responseText) {
 
   // Detect urgency from response
   let urgency = 'monitor';
-  const lower = responseText.toLowerCase();
+  const lower = (responseText || "").toLowerCase();
   if (lower.includes('see doctor now') || lower.includes('emergency') || lower.includes('112') || lower.includes('hospital immediately') || lower.includes('urgent')) {
     urgency = 'urgent';
   } else if (lower.includes('safe') || lower.includes('home care') || lower.includes('घर पर')) {
