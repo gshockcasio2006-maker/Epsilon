@@ -639,6 +639,101 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-text { font-size: 15px; color: var(--text2); }
 
+  /* LOGIN OVERLAY */
+  .login-overlay {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #0f2027, #203a43, #0f5c3a);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0;
+  }
+  .login-overlay.hidden { display: none; }
+  .login-box {
+    background: var(--surface);
+    border-radius: 24px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .login-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--green);
+    margin-bottom: 8px;
+  }
+  .login-tagline {
+    font-size: 14px;
+    color: var(--text2);
+    margin-bottom: 32px;
+    line-height: 1.5;
+  }
+  .login-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    text-align: left;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .login-input {
+    width: 100%;
+    padding: 14px 18px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    margin-bottom: 20px;
+    transition: border-color 0.2s;
+    color: var(--text);
+    background: var(--bg);
+  }
+  .login-input:focus { border-color: var(--green); background: white; }
+  .login-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .login-btn:hover { background: #25a06a; transform: translateY(-1px); }
+  .login-error {
+    color: var(--red);
+    font-size: 13px;
+    margin-top: -12px;
+    margin-bottom: 12px;
+    display: none;
+  }
+  .login-error.visible { display: block; }
+  .user-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--green-light);
+    color: var(--green);
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .user-badge:hover { background: #d0f0e0; }
+
   /* BOTTOM NAV (mobile only) */
   .bottom-nav {
     display: none;
@@ -682,6 +777,18 @@
 </head>
 <body>
 
+<!-- LOGIN OVERLAY -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">Epsilon</div>
+    <div class="login-tagline">Your multilingual health assistant 🌿<br/>Enter your name to get started</div>
+    <label class="login-label">Your Name</label>
+    <input class="login-input" id="login-name" type="text" placeholder="e.g. Rahul, Priya, Arjun..." maxlength="30" />
+    <div class="login-error" id="login-error">Please enter your name to continue</div>
+    <button class="login-btn" onclick="doLogin()">Continue →</button>
+  </div>
+</div>
+
 <!-- LOADING -->
 <div class="loading-overlay" id="loader">
   <div class="spinner"></div>
@@ -698,6 +805,7 @@
     <button class="nav-tab" onclick="showPage('about',this)">About</button>
   </div>
   <button class="lang-btn" onclick="cycleLang()">🌐 <span id="lang-label">English</span></button>
+  <button class="user-badge" id="user-badge" onclick="doLogout()" style="display:none">👤 <span id="user-name-display"></span> · Logout</button>
 </nav>
 
 <!-- BOTTOM NAV (mobile only) -->
@@ -841,6 +949,9 @@
   <div class="tracker-wrap">
     <div class="section-title">Wellness Tracker</div>
     <div class="section-sub">Log your daily health habits. We'll surface insights linking your lifestyle to your symptoms.</div>
+    <div style="background:var(--green-light);border-radius:var(--radius-sm);padding:10px 16px;margin-bottom:20px;font-size:14px;color:var(--green);font-weight:500;">
+      👤 Logging as: <strong id="tracker-username">Guest</strong>
+    </div>
 
     <div class="tracker-grid">
       <div class="tracker-card">
@@ -936,6 +1047,45 @@
 // ---- CONFIG ----
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyDhBovqLZUF01OTCiEq7MRpLn0V3o_PZ-GZect1nT8POc6qWK8hXvJ0_JQSid5sHZn/exec';
 const GEMINI_FUNCTION_URL = '/.netlify/functions/gemini';
+
+// ---- USER SESSION ----
+let currentUser = localStorage.getItem('epsilon_user') || '';
+
+function doLogin() {
+  const name = document.getElementById('login-name').value.trim();
+  if (!name) {
+    document.getElementById('login-error').classList.add('visible');
+    return;
+  }
+  currentUser = name;
+  localStorage.setItem('epsilon_user', name);
+  document.getElementById('login-overlay').classList.add('hidden');
+  document.getElementById('user-name-display').textContent = name;
+  document.getElementById('user-badge').style.display = 'flex';
+  document.getElementById('tracker-username').textContent = name;
+}
+
+function doLogout() {
+  localStorage.removeItem('epsilon_user');
+  currentUser = '';
+  document.getElementById('login-name').value = '';
+  document.getElementById('login-error').classList.remove('visible');
+  document.getElementById('login-overlay').classList.remove('hidden');
+  document.getElementById('user-badge').style.display = 'none';
+}
+
+// Init on load
+window.addEventListener('load', function() {
+  document.getElementById('login-name').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') doLogin();
+  });
+  if (currentUser) {
+    document.getElementById('login-overlay').classList.add('hidden');
+    document.getElementById('user-name-display').textContent = currentUser;
+    document.getElementById('user-badge').style.display = 'flex';
+    document.getElementById('tracker-username').textContent = currentUser;
+  }
+});
 
 // ---- CHAT HISTORY (for multi-turn conversation) ----
 let chatHistory = [];
@@ -1143,10 +1293,9 @@ async function logToSheets(data) {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      body: JSON.stringify({ ...data, user: currentUser || 'Anonymous' })
     });
   } catch (e) {
-    // Silent fail — logging is non-critical
     console.log('Sheets log failed silently:', e);
   }
 }
