@@ -1080,6 +1080,7 @@ document.getElementById('chat-input').addEventListener('keydown', e => {
 
 // ---- SHOW AI RESULT PANEL ----
 function showAIResult(responseText) {
+  responseText = responseText || "";
   const panel = document.getElementById('result-panel');
   const badge = document.getElementById('urgency-badge');
   const urgencyText = document.getElementById('urgency-text');
@@ -1110,9 +1111,9 @@ function showAIResult(responseText) {
   // Parse Allopathic, Ayurvedic, Home from response
   let allopathic = '', ayurvedic = '', home = '';
 
-  const alloMatch = responseText.match(/💊[^🌿🏠💡\n]*(?:\n[^🌿🏠💡💊]*)?/);
-  const ayurMatch = responseText.match(/🌿[^💊🏠💡\n]*(?:\n[^💊🏠💡🌿]*)?/);
-  const homeMatch = responseText.match(/🏠[^💊🌿💡\n]*(?:\n[^💊🌿💡🏠]*)?/);
+  const alloMatch = (responseText || "").match(/💊[^🌿🏠💡\n]*(?:\n[^🌿🏠💡💊]*)?/);
+  const ayurMatch = (responseText || "").match(/🌿[^💊🏠💡\n]*(?:\n[^💊🏠💡🌿]*)?/);
+  const homeMatch = (responseText || "").match(/🏠[^💊🌿💡\n]*(?:\n[^💊🌿💡🏠]*)?/);
 
   if (alloMatch) allopathic = alloMatch[0].replace('💊', '').trim();
   if (ayurMatch) ayurvedic = ayurMatch[0].replace('🌿', '').trim();
