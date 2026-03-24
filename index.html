@@ -1027,7 +1027,7 @@ async function callGemini(userMessage) {
 
 // ---- FORMAT AI RESPONSE FOR DISPLAY ----
 function formatResponse(text) {
-  return text
+  return (text || "")
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\n/g, '<br/>');
 }
