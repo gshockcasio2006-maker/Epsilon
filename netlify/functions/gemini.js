@@ -3,9 +3,9 @@ exports.handler = async function (event) {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
-  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+  const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
-  if (!GEMINI_API_KEY) {
+  if (!GROQ_API_KEY) {
     return {
       statusCode: 500,
       headers: { 'Access-Control-Allow-Origin': '*' },
@@ -28,50 +28,46 @@ FOR EVERY SYMPTOM RESPONSE, always provide exactly these 3 sections:
 
 URGENCY: Safe - Home Care OR Monitor Closely OR See Doctor NOW
 
-Allopathic: conventional medicine advice, OTC options
-Ayurvedic: traditional Indian remedy as informational support only
-Home Remedy: simple, accessible home care
+💊 Allopathic: conventional medicine advice, OTC options
+🌿 Ayurvedic: traditional Indian remedy as informational support only
+🏠 Home Remedy: simple, accessible home care
 
-Insight: 1-2 lines connecting lifestyle or pattern
+💡 Insight: 1-2 lines connecting lifestyle or pattern
 
 LANGUAGE RULES:
 - If the user writes in Hindi or Hinglish respond in Hindi/Hinglish
 - If the user writes in English respond in English
 - Always be warm and reassuring`;
 
-    const contents = [];
+    const messages = [];
 
     if (history && history.length > 0) {
       for (const msg of history) {
-        contents.push({
-          role: msg.role === 'model' ? 'model' : 'user',
-          parts: [{ text: msg.text }]
+        messages.push({
+          role: msg.role === 'model' ? 'assistant' : 'user',
+          content: msg.text
         });
       }
     }
 
-    contents.push({
-      role: 'user',
-      parts: [{ text: message }]
-    });
+    messages.push({ role: 'user', content: message });
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: {
-            parts: [{ text: systemPrompt }]
-          },
-          contents,
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 600
-          }
-        })
-      }
-    );
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...messages
+        ],
+        temperature: 0.7,
+        max_tokens: 600
+      })
+    });
 
     const data = await response.json();
 
@@ -83,7 +79,7 @@ LANGUAGE RULES:
       };
     }
 
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not process that. Please try again.';
+    const text = data.choices?.[0]?.message?.content || 'Sorry, I could not process that. Please try again.';
 
     return {
       statusCode: 200,
