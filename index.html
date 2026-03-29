@@ -369,6 +369,50 @@
     display: none;
   }
   .result-panel.visible { display: block; animation: fadeUp 0.4s ease; }
+
+  /* ANALYSIS TRIGGER BUTTON */
+  .analysis-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    gap: 14px;
+  }
+  .analysis-trigger-info { flex: 1; }
+  .analysis-trigger-info .atitle { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .analysis-trigger-info .asub { font-size: 13px; color: var(--text2); }
+  .analysis-btn {
+    flex-shrink: 0;
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .analysis-btn:hover { background: #25a06a; transform: translateY(-1px); }
+  .analysis-btn:disabled { background: var(--text3); cursor: not-allowed; transform: none; }
+  .analysis-btn .btn-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  .analysis-btn.loading .btn-spinner { display: block; }
+  .analysis-btn.loading .btn-label { display: none; }
   .result-header {
     padding: 20px 24px;
     border-bottom: 1px solid var(--border);
@@ -1393,6 +1437,18 @@
       </div>
     </div>
 
+    <!-- ANALYSIS TRIGGER -->
+    <div class="analysis-trigger" id="analysis-trigger">
+      <div class="analysis-trigger-info">
+        <div class="atitle">🩺 Get Analysis Report</div>
+        <div class="asub">Tell the assistant your symptoms above, then click to generate your full medical report.</div>
+      </div>
+      <button class="analysis-btn" id="analysis-btn" onclick="getAnalysisReport()">
+        <div class="btn-spinner"></div>
+        <span class="btn-label">Analyse →</span>
+      </button>
+    </div>
+
     <div class="result-panel" id="result-panel">
       <div class="result-header">
         <h3>🩺 Analysis Result</h3>
@@ -2116,29 +2172,7 @@ function formatResponse(text) {
     .replace(/\n/g, '<br/>');
 }
 
-// ---- DETECT GREETINGS vs SYMPTOMS ----
-function isGreeting(text) {
-  const t = text.toLowerCase().trim();
-  const greetingPatterns = [
-    /^(hi|hello|hey|hii|helo|heya|howdy|sup|yo)[\s!?.]*$/,
-    /^namaste[\s!?.]*$/,
-    /^(good\s)?(morning|evening|afternoon|night)[\s!?.]*$/,
-    /^(what'?s?\s?up|wassup)[\s!?.]*$/,
-    /^(ok|okay|sure|thanks|thank\s?you|thx|got\s?it|noted|bye|goodbye|see\s?ya)[\s!?.]*$/,
-    /^(how\s?are\s?you|how\s?r\s?u|how\s?do\s?you\s?do|kaisa\s?ho|kaise\s?ho)[\s!?.]*$/,
-  ];
-  return greetingPatterns.some(p => p.test(t));
-}
-
-function hasSymptomContent(text) {
-  const lower = text.toLowerCase();
-  const allTriggers = KB.flatMap(e => e.triggers);
-  if (allTriggers.some(t => lower.includes(t))) return true;
-  const symptomWords = ['pain','ache','hurt','sick','ill','nausea','vomit','dizzy','weak','sore','swollen','bleed','rash','itch','burn','infection','cough','cold','flu','allergy','diarrhea','constipation','breathing','sweat','shiver'];
-  return symptomWords.some(w => lower.includes(w));
-}
-
-// ---- SEND MESSAGE ----
+// ---- SEND MESSAGE — pure chat, no analysis triggering ----
 async function sendMessage() {
   const inp = document.getElementById('chat-input');
   const text = inp.value.trim();
@@ -2149,11 +2183,6 @@ async function sendMessage() {
 
   appendMsg(text, true);
   lastSymptomQuery = text;
-
-  const isHindi = detectHindi(text);
-  const greeting = isGreeting(text);
-  const hasSymptom = hasSymptomContent(text);
-
   showTyping();
 
   try {
@@ -2162,31 +2191,7 @@ async function sendMessage() {
     chatHistory.push({ role: 'user', text });
     chatHistory.push({ role: 'model', text: aiResponse });
     lastAIResponse = aiResponse;
-
-    if (hasSymptom && !greeting) {
-      // Symptom flow: confirm msg → AI response → result panel
-      const confirmMsg = isHindi
-        ? `🙏 मैं आपके लक्षण समझ रहा हूँ… विश्लेषण हो रहा है।`
-        : `🙏 Got it — analysing your symptoms: <em>"${text}"</em>. Give me a moment.`;
-      appendMsg(confirmMsg, false);
-      setTimeout(() => {
-        showTyping();
-        setTimeout(() => {
-          removeTyping();
-          appendMsg(formatResponse(aiResponse), false);
-          showAIResult(aiResponse);
-          const doneMsg = isHindi
-            ? '✅ विश्लेषण पूरा हुआ। नीचे आपकी रिपोर्ट देखें।'
-            : '✅ Analysis complete. See your detailed report below.';
-          appendMsg(doneMsg, false);
-          logToSheets({ type: 'symptom', symptom: text, response: aiResponse.substring(0, 300) });
-        }, 1400);
-      }, 400);
-    } else {
-      // Casual chat — just show AI reply, no result panel
-      appendMsg(formatResponse(aiResponse), false);
-    }
-
+    appendMsg(formatResponse(aiResponse), false);
   } catch (err) {
     removeTyping();
     appendMsg('⚠️ Sorry, I had trouble connecting. Please check your internet and try again.', false);
@@ -2198,79 +2203,159 @@ async function sendMessage() {
   inp.focus();
 }
 
-document.getElementById('chat-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') sendMessage();
-});
+// ---- GET ANALYSIS REPORT — triggered manually by button ----
+async function getAnalysisReport() {
+  // Gather conversation context
+  const conversationText = chatHistory.map(m => `${m.role === 'user' ? 'User' : 'Epsilon'}: ${m.text}`).join('\n');
+  const lastUserMsg = [...chatHistory].reverse().find(m => m.role === 'user');
 
-// ---- SHOW AI RESULT PANEL ----
-function showAIResult(responseText) {
+  if (!lastUserMsg && !lastSymptomQuery) {
+    appendMsg('🙏 Please describe your symptoms in the chat first, then click Analyse.', false);
+    return;
+  }
+
+  const btn = document.getElementById('analysis-btn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  // Build a structured analysis prompt
+  const analysisPrompt = `Based on this health conversation, generate a structured medical analysis report.
+
+CONVERSATION:
+${conversationText || 'User says: ' + lastSymptomQuery}
+
+Return EXACTLY in this format (use these exact emoji markers):
+
+URGENCY: [Safe - Home Care / Monitor Closely / See Doctor NOW]
+
+CONDITIONS:
+- [Condition name] — [Most likely/Possible/Monitor]
+- [Condition name] — [Most likely/Possible/Monitor]
+- [Condition name] — [Most likely/Possible/Monitor]
+
+💊 Allopathic: [conventional medicine advice, OTC medications]
+🌿 Ayurvedic: [traditional Indian remedy]
+🏠 Home Remedy: [simple home care steps]
+
+💡 Insight: [1-2 line personalised insight linking lifestyle to symptoms]`;
+
+  try {
+    const profileContext = userProfile.name
+      ? `Patient: ${userProfile.name}, Age: ${userProfile.age}, Gender: ${userProfile.gender}`
+      : '';
+
+    const response = await fetch(GEMINI_FUNCTION_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: analysisPrompt, history: [], profileContext })
+    });
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+    const analysisText = data.response;
+
+    renderAnalysisReport(analysisText, lastUserMsg ? lastUserMsg.text : lastSymptomQuery);
+    logToSheets({ type: 'analysis', symptom: lastUserMsg ? lastUserMsg.text : lastSymptomQuery, response: analysisText.substring(0, 300) });
+
+  } catch (err) {
+    appendMsg('⚠️ Could not generate analysis. Please check your connection and try again.', false);
+    console.error('Analysis error:', err);
+  }
+
+  btn.classList.remove('loading');
+  btn.disabled = false;
+}
+
+// ---- RENDER ANALYSIS REPORT ----
+function renderAnalysisReport(responseText, symptomQuery) {
   responseText = responseText || '';
   const panel = document.getElementById('result-panel');
   const badge = document.getElementById('urgency-badge');
   const urgencyText = document.getElementById('urgency-text');
 
   // Detect urgency
-  let urgency = 'monitor';
   const lower = responseText.toLowerCase();
-  if (lower.includes('🔴') || lower.includes('see doctor now') || lower.includes('call 112') || lower.includes('hospital immediately') || lower.includes('emergency')) {
+  let urgency = 'monitor';
+  if (lower.includes('see doctor now') || lower.includes('call 112') || lower.includes('emergency') || lower.includes('urgent') || lower.includes('🔴')) {
     urgency = 'urgent';
-  } else if (lower.includes('🟢') || lower.includes('safe - home care') || lower.includes('safe — home care') || lower.includes('home care') || lower.includes('घर पर')) {
+  } else if (lower.includes('safe - home care') || lower.includes('safe — home care') || lower.includes('home care') || lower.includes('🟢')) {
     urgency = 'safe';
   }
-
   badge.className = 'urgency-badge ' + urgency;
   urgencyText.textContent = { safe: '🟢 Safe — Home Care', monitor: '🟡 Monitor Closely', urgent: '🔴 See Doctor NOW!' }[urgency];
 
-  // ---- POSSIBLE CONDITIONS from KB fallback or AI ----
+  // ---- POSSIBLE CONDITIONS ----
   const condList = document.getElementById('condition-list');
-  // Try to match KB conditions first for accuracy
-  const kbResult = matchSymptoms(lastSymptomQuery || '');
-  if (kbResult && kbResult.conditions && kbResult.conditions.length > 0 && kbResult !== DEFAULT_RESPONSE) {
-    condList.innerHTML = kbResult.conditions.map(c => `
-      <div class="condition-item">
-        <div class="condition-dot" style="background:${c.color}"></div>
-        <div><strong>${c.name}</strong> — ${c.prob}</div>
-      </div>`).join('');
+  // Try parsing from response first
+  const condSection = responseText.match(/CONDITIONS:([\s\S]*?)(?=💊|🌿|🏠|💡|$)/i);
+  if (condSection && condSection[1]) {
+    const lines = condSection[1].trim().split('\n').filter(l => l.trim().startsWith('-'));
+    if (lines.length > 0) {
+      condList.innerHTML = lines.map(line => {
+        const clean = line.replace(/^-\s*/, '').trim();
+        const parts = clean.split('—');
+        const name = parts[0] ? parts[0].trim() : clean;
+        const prob = parts[1] ? parts[1].trim() : '';
+        const color = prob.toLowerCase().includes('most likely') ? '#1a9c65'
+          : prob.toLowerCase().includes('monitor') || prob.toLowerCase().includes('possible') ? '#f5a623'
+          : '#1a9c65';
+        return `<div class="condition-item">
+          <div class="condition-dot" style="background:${color}"></div>
+          <div><strong>${name}</strong>${prob ? ' — ' + prob : ''}</div>
+        </div>`;
+      }).join('');
+    } else {
+      // Fall back to KB
+      const kbResult = matchSymptoms(symptomQuery || '');
+      condList.innerHTML = (kbResult && kbResult.conditions ? kbResult.conditions : []).map(c =>
+        `<div class="condition-item"><div class="condition-dot" style="background:${c.color}"></div><div><strong>${c.name}</strong> — ${c.prob}</div></div>`
+      ).join('') || `<div class="condition-item"><div class="condition-dot" style="background:#1a9c65"></div><div>AI-powered analysis based on your symptoms</div></div>`;
+    }
   } else {
-    // Parse conditions from AI response if KB didn't match
-    condList.innerHTML = `<div class="condition-item"><div class="condition-dot" style="background:#1a9c65"></div><div>AI-powered analysis based on your symptoms</div></div>`;
+    const kbResult = matchSymptoms(symptomQuery || '');
+    if (kbResult && kbResult !== DEFAULT_RESPONSE && kbResult.conditions) {
+      condList.innerHTML = kbResult.conditions.map(c =>
+        `<div class="condition-item"><div class="condition-dot" style="background:${c.color}"></div><div><strong>${c.name}</strong> — ${c.prob}</div></div>`
+      ).join('');
+    } else {
+      condList.innerHTML = `<div class="condition-item"><div class="condition-dot" style="background:#1a9c65"></div><div>AI-powered analysis based on your symptoms</div></div>`;
+    }
   }
 
-  // ---- WHAT TO DO — parse from AI response ----
-  let allopathic = '', ayurvedic = '', home = '';
-  const alloMatch = responseText.match(/💊[^🌿🏠💡\n]*(?:\n[^🌿🏠💡💊\n]*)?/);
-  const ayurMatch = responseText.match(/🌿[^💊🏠💡\n]*(?:\n[^💊🏠💡🌿\n]*)?/);
-  const homeMatch = responseText.match(/🏠[^💊🌿💡\n]*(?:\n[^💊🌿💡🏠\n]*)?/);
-  if (alloMatch) allopathic = alloMatch[0].replace('💊', '').trim();
-  if (ayurMatch) ayurvedic = ayurMatch[0].replace('🌿', '').trim();
-  if (homeMatch) home = homeMatch[0].replace('🏠', '').trim();
+  // ---- WHAT TO DO — parse Allopathic, Ayurvedic, Home ----
+  const alloMatch = responseText.match(/💊[^🌿🏠💡]*(?:\n[^🌿🏠💡💊\n]*)*/);
+  const ayurMatch = responseText.match(/🌿[^💊🏠💡]*(?:\n[^💊🏠💡🌿\n]*)*/);
+  const homeMatch = responseText.match(/🏠[^💊🌿💡]*(?:\n[^💊🌿💡🏠\n]*)*/);
+  const allopathic = alloMatch ? alloMatch[0].replace('💊', '').replace(/Allopathic:/i, '').trim() : '';
+  const ayurvedic  = ayurMatch ? ayurMatch[0].replace('🌿', '').replace(/Ayurvedic:/i, '').trim() : '';
+  const home       = homeMatch ? homeMatch[0].replace('🏠', '').replace(/Home Remedy:/i, '').trim() : '';
 
-  // Fallback to KB actions if AI didn't return structured format
   const actList = document.getElementById('action-list');
-  if (!allopathic && !ayurvedic && !home && kbResult && kbResult.actions) {
-    actList.innerHTML = kbResult.actions.map(a => `
-      <div class="action-item ${a.type}">
-        <div class="action-icon">${a.icon}</div>
-        <div>${a.text}</div>
-      </div>`).join('');
-  } else {
+  if (allopathic || ayurvedic || home) {
     actList.innerHTML = `
       ${allopathic ? `<div class="action-item allopathic"><div class="action-icon">💊</div><div>${allopathic}</div></div>` : ''}
-      ${ayurvedic ? `<div class="action-item ayurveda"><div class="action-icon">🌿</div><div>${ayurvedic}</div></div>` : ''}
-      ${home ? `<div class="action-item home"><div class="action-icon">🏠</div><div>${home}</div></div>` : ''}
-      ${!allopathic && !ayurvedic && !home ? `<div class="action-item allopathic"><div class="action-icon">🩺</div><div>${responseText.substring(0, 300)}</div></div>` : ''}
+      ${ayurvedic  ? `<div class="action-item ayurveda"><div class="action-icon">🌿</div><div>${ayurvedic}</div></div>`  : ''}
+      ${home       ? `<div class="action-item home"><div class="action-icon">🏠</div><div>${home}</div></div>`            : ''}
     `;
+  } else {
+    // Fallback to KB actions
+    const kbResult = matchSymptoms(symptomQuery || '');
+    if (kbResult && kbResult.actions) {
+      actList.innerHTML = kbResult.actions.map(a =>
+        `<div class="action-item ${a.type}"><div class="action-icon">${a.icon}</div><div>${a.text}</div></div>`
+      ).join('');
+    } else {
+      actList.innerHTML = `<div class="action-item allopathic"><div class="action-icon">🩺</div><div>${responseText.substring(0, 300)}</div></div>`;
+    }
   }
 
   // ---- INSIGHT ----
   const insightMatch = responseText.match(/💡[^\n]*/);
   const insightEl = document.getElementById('insight-text');
   if (insightMatch) {
-    insightEl.textContent = insightMatch[0].replace('💡', '').replace('Insight:', '').trim();
-  } else if (kbResult && kbResult.insight) {
-    insightEl.textContent = kbResult.insight;
+    insightEl.textContent = insightMatch[0].replace('💡', '').replace(/Insight:/i, '').trim();
   } else {
-    insightEl.textContent = 'Please consult a qualified doctor if symptoms persist or worsen.';
+    const kbResult = matchSymptoms(symptomQuery || '');
+    insightEl.textContent = (kbResult && kbResult.insight) || 'Please consult a qualified doctor if symptoms persist or worsen.';
   }
 
   // ---- 3D MODEL (BioDigital) ----
@@ -2283,18 +2368,15 @@ function showAIResult(responseText) {
   }
   if (modelMatch && modelMatch[1].trim()) {
     const query = modelMatch[1].trim();
-    const searchUrl = `https://human.biodigital.com/search?search=${encodeURIComponent(query)}`;
     modelSection.innerHTML = `
       <div style="background:linear-gradient(135deg,#0f2027,#1a3a4a);border-radius:var(--radius);padding:18px 20px;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
           <div style="width:36px;height:36px;border-radius:10px;background:rgba(124,245,192,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🫀</div>
-          <div>
-            <div style="color:white;font-weight:700;font-size:14px;">Interactive 3D Body Model</div>
-            <div style="color:rgba(255,255,255,0.6);font-size:12px;">Powered by BioDigital Human</div>
-          </div>
+          <div><div style="color:white;font-weight:700;font-size:14px;">Interactive 3D Body Model</div>
+          <div style="color:rgba(255,255,255,0.6);font-size:12px;">Powered by BioDigital Human</div></div>
         </div>
         <p style="color:rgba(255,255,255,0.8);font-size:13px;line-height:1.5;margin-bottom:14px;">Explore a 3D anatomical model for <strong style="color:#7cf5c0;">${query}</strong>.</p>
-        <a href="${searchUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;background:#2db87a;color:white;padding:10px 20px;border-radius:50px;font-size:13px;font-weight:600;text-decoration:none;">🔬 View 3D Model →</a>
+        <a href="https://human.biodigital.com/search?search=${encodeURIComponent(query)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;background:#2db87a;color:white;padding:10px 20px;border-radius:50px;font-size:13px;font-weight:600;text-decoration:none;">🔬 View 3D Model →</a>
       </div>`;
     modelSection.style.marginTop = '16px';
   } else {
@@ -2304,6 +2386,10 @@ function showAIResult(responseText) {
   panel.classList.add('visible');
   setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
 }
+
+document.getElementById('chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendMessage();
+});
 
 // ---- GOOGLE SHEETS LOGGING ----
 async function logToSheets(data) {
