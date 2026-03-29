@@ -270,7 +270,7 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
-    max-height: 420px;
+    max-height: 520px;
     overflow-y: auto;
   }
   .msg {
@@ -691,7 +691,7 @@
   .mh-chat-header .mh-name { font-weight: 600; font-size: 15px; }
   .mh-chat-header .mh-status { font-size: 11px; opacity: 0.8; }
   .mh-online-dot { width: 8px; height: 8px; border-radius: 50%; background: #a8edca; margin-left: auto; animation: pulse 2s infinite; }
-  .mh-chat-messages { padding: 16px; min-height: 260px; max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #fafbff; }
+  .mh-chat-messages { padding: 16px; min-height: 320px; max-height: 520px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #fafbff; }
   .mh-msg { display: flex; gap: 8px; align-items: flex-start; animation: fadeUp 0.3s ease; }
   .mh-msg.user { flex-direction: row-reverse; }
   .mh-msg-av { width: 28px; height: 28px; min-width: 28px; border-radius: 50%; background: #f0eeff; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #764ba2; font-weight: 600; }
@@ -1110,6 +1110,18 @@
   .bnav-item.active .bnav-icon { filter: none; }
   .bnav-item.active { background: var(--green-light); }
 
+  /* ---- DESKTOP (601px+) ---- */
+  @media (min-width: 601px) {
+    .bottom-nav { display: none !important; }
+    body { padding-bottom: 0 !important; }
+    .checker-wrap { max-width: 800px; }
+    .tracker-wrap { max-width: 960px; }
+    .chat-messages { max-height: 600px; }
+    .features-grid { grid-template-columns: repeat(3, 1fr); }
+    .login-box { max-width: 520px; padding: 48px 52px; }
+  }
+
+  /* ---- MOBILE (600px and below) ---- */
   @media (max-width: 600px) {
     .nav-tabs { display: none; }
     .hero { padding: 60px 24px 40px; }
@@ -1407,7 +1419,6 @@
         <div class="disclaimer">
           ⚠️ Epsilon provides informational guidance only, not medical diagnosis. Always consult a qualified doctor for serious, persistent, or worsening symptoms. Traditional / Ayurvedic suggestions are supplemental and not replacements for medical treatment.
         </div>
-        <div id="model-section" style="display:none;margin-top:16px;"></div>
       </div>
     </div>
   </div>
@@ -1589,6 +1600,41 @@
         <div class="pitch-stat"><div class="num">12+</div><div class="lbl">Languages</div></div>
         <div class="pitch-stat"><div class="num">50+</div><div class="lbl">Symptom Patterns</div></div>
         <div class="pitch-stat"><div class="num">3</div><div class="lbl">Care Traditions</div></div>
+      </div>
+    </div>
+
+    <!-- TEAM SECTION -->
+    <div class="about-card">
+      <h2>👥 Meet the Team</h2>
+      <p style="margin-bottom:20px;">Epsilon was built with passion by a team of students from IIMT — united by one goal: making health guidance accessible to every Indian.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="background:linear-gradient(135deg,#edf7f2,#d4ede0);border-radius:14px;padding:16px;text-align:center;">
+          <div style="width:52px;height:52px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 10px;">👨‍💻</div>
+          <div style="font-weight:700;font-size:15px;color:var(--text);">Shaurya</div>
+          <div style="font-size:12px;color:var(--green);font-weight:600;margin-top:2px;">CSE</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:4px;">Lead Developer</div>
+        </div>
+        <div style="background:linear-gradient(135deg,#f5eeff,#e8d5ff);border-radius:14px;padding:16px;text-align:center;">
+          <div style="width:52px;height:52px;border-radius:50%;background:#8e44ad;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 10px;">👩‍💻</div>
+          <div style="font-weight:700;font-size:15px;color:var(--text);">Arpita</div>
+          <div style="font-size:12px;color:#8e44ad;font-weight:600;margin-top:2px;">CSE</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:4px;">UI & Research</div>
+        </div>
+        <div style="background:linear-gradient(135deg,#fff8ec,#fde8c0);border-radius:14px;padding:16px;text-align:center;">
+          <div style="width:52px;height:52px;border-radius:50%;background:#e67e22;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 10px;">👨‍💻</div>
+          <div style="font-weight:700;font-size:15px;color:var(--text);">Naman</div>
+          <div style="font-size:12px;color:#e67e22;font-weight:600;margin-top:2px;">CSDS</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:4px;">Data & Backend</div>
+        </div>
+        <div style="background:linear-gradient(135deg,#fff0f0,#ffd6d6);border-radius:14px;padding:16px;text-align:center;">
+          <div style="width:52px;height:52px;border-radius:50%;background:#e84040;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 10px;">👩‍💻</div>
+          <div style="font-weight:700;font-size:15px;color:var(--text);">Akshita</div>
+          <div style="font-size:12px;color:#e84040;font-weight:600;margin-top:2px;">EC</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:4px;">Systems & IoT</div>
+        </div>
+      </div>
+      <div style="margin-top:16px;background:var(--bg);border-radius:var(--radius-sm);padding:12px 16px;font-size:13px;color:var(--text2);text-align:center;">
+        🏛️ Built at <strong style="color:var(--text);">IIMT University</strong> · Hackathon Project 2026
       </div>
     </div>
   </div>
@@ -1879,7 +1925,7 @@
 
 <script>
 // ---- CONFIG ----
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyd_F8o1jDvsvsj2hPLh5rjcpyCz-EDW-tR-5htlDYb-1QYGVHHWohMPMdlS3BEP4w9/exec';
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbz-OQkb_TtsoEyzRBYMQqdYTodpZu0pzbKZ85yK_TnHoN6V8Q66wvSERfqKATDDNNHt/exec';
 const GEMINI_FUNCTION_URL = '/.netlify/functions/gemini';
 
 // ---- USER SESSION ----
@@ -1903,9 +1949,7 @@ function doLogin() {
     return;
   }
   userProfile = {
-    name,
-    age,
-    gender,
+    name, age, gender,
     height: document.getElementById('login-height').value || 'Not provided',
     weight: document.getElementById('login-weight').value || 'Not provided',
     blood: document.getElementById('login-blood').value || 'Not provided',
@@ -2065,18 +2109,33 @@ async function callGemini(userMessage) {
   return data.response;
 }
 
-// ---- FORMAT AI RESPONSE FOR DISPLAY ----
+// ---- FORMAT RESPONSE ----
 function formatResponse(text) {
-  return (text || "")
+  return (text || '')
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\n/g, '<br/>');
 }
 
-// ---- DETECT IF MESSAGE IS A SYMPTOM ----
-function isSymptomMessage(text) {
-  const greetings = ['hi','hello','hey','namaste','hii','helo','sup','howdy','good morning','good evening','good afternoon','what is','how does','explain','tell me about','what are'];
-  const lower = text.toLowerCase().trim();
-  return !greetings.some(g => lower.startsWith(g) || lower === g);
+// ---- DETECT GREETINGS vs SYMPTOMS ----
+function isGreeting(text) {
+  const t = text.toLowerCase().trim();
+  const greetingPatterns = [
+    /^(hi|hello|hey|hii|helo|heya|howdy|sup|yo)[\s!?.]*$/,
+    /^namaste[\s!?.]*$/,
+    /^(good\s)?(morning|evening|afternoon|night)[\s!?.]*$/,
+    /^(what'?s?\s?up|wassup)[\s!?.]*$/,
+    /^(ok|okay|sure|thanks|thank\s?you|thx|got\s?it|noted|bye|goodbye|see\s?ya)[\s!?.]*$/,
+    /^(how\s?are\s?you|how\s?r\s?u|how\s?do\s?you\s?do|kaisa\s?ho|kaise\s?ho)[\s!?.]*$/,
+  ];
+  return greetingPatterns.some(p => p.test(t));
+}
+
+function hasSymptomContent(text) {
+  const lower = text.toLowerCase();
+  const allTriggers = KB.flatMap(e => e.triggers);
+  if (allTriggers.some(t => lower.includes(t))) return true;
+  const symptomWords = ['pain','ache','hurt','sick','ill','nausea','vomit','dizzy','weak','sore','swollen','bleed','rash','itch','burn','infection','cough','cold','flu','allergy','diarrhea','constipation','breathing','sweat','shiver'];
+  return symptomWords.some(w => lower.includes(w));
 }
 
 // ---- SEND MESSAGE ----
@@ -2091,28 +2150,47 @@ async function sendMessage() {
   appendMsg(text, true);
   lastSymptomQuery = text;
 
+  const isHindi = detectHindi(text);
+  const greeting = isGreeting(text);
+  const hasSymptom = hasSymptomContent(text);
+
   showTyping();
 
   try {
     const aiResponse = await callGemini(text);
     removeTyping();
-
     chatHistory.push({ role: 'user', text });
     chatHistory.push({ role: 'model', text: aiResponse });
     lastAIResponse = aiResponse;
 
-    appendMsg(formatResponse(aiResponse), false);
-
-    // Only show result panel for symptom-type messages
-    if (isSymptomMessage(text)) {
-      showAIResult(aiResponse);
-      logToSheets({ type: 'symptom', symptom: text, response: aiResponse.substring(0, 300) });
+    if (hasSymptom && !greeting) {
+      // Symptom flow: confirm msg → AI response → result panel
+      const confirmMsg = isHindi
+        ? `🙏 मैं आपके लक्षण समझ रहा हूँ… विश्लेषण हो रहा है।`
+        : `🙏 Got it — analysing your symptoms: <em>"${text}"</em>. Give me a moment.`;
+      appendMsg(confirmMsg, false);
+      setTimeout(() => {
+        showTyping();
+        setTimeout(() => {
+          removeTyping();
+          appendMsg(formatResponse(aiResponse), false);
+          showAIResult(aiResponse);
+          const doneMsg = isHindi
+            ? '✅ विश्लेषण पूरा हुआ। नीचे आपकी रिपोर्ट देखें।'
+            : '✅ Analysis complete. See your detailed report below.';
+          appendMsg(doneMsg, false);
+          logToSheets({ type: 'symptom', symptom: text, response: aiResponse.substring(0, 300) });
+        }, 1400);
+      }, 400);
+    } else {
+      // Casual chat — just show AI reply, no result panel
+      appendMsg(formatResponse(aiResponse), false);
     }
 
   } catch (err) {
     removeTyping();
     appendMsg('⚠️ Sorry, I had trouble connecting. Please check your internet and try again.', false);
-    console.error('Gemini error:', err);
+    console.error('Epsilon error:', err);
   }
 
   inp.disabled = false;
@@ -2126,7 +2204,7 @@ document.getElementById('chat-input').addEventListener('keydown', e => {
 
 // ---- SHOW AI RESULT PANEL ----
 function showAIResult(responseText) {
-  responseText = responseText || "";
+  responseText = responseText || '';
   const panel = document.getElementById('result-panel');
   const badge = document.getElementById('urgency-badge');
   const urgencyText = document.getElementById('urgency-text');
@@ -2134,50 +2212,80 @@ function showAIResult(responseText) {
   // Detect urgency
   let urgency = 'monitor';
   const lower = responseText.toLowerCase();
-  if (lower.includes('see doctor now') || lower.includes('emergency') || lower.includes('112') || lower.includes('hospital immediately') || lower.includes('urgent') || lower.includes('🔴')) {
+  if (lower.includes('🔴') || lower.includes('see doctor now') || lower.includes('call 112') || lower.includes('hospital immediately') || lower.includes('emergency')) {
     urgency = 'urgent';
-  } else if (lower.includes('safe') || lower.includes('home care') || lower.includes('घर पर') || lower.includes('🟢')) {
+  } else if (lower.includes('🟢') || lower.includes('safe - home care') || lower.includes('safe — home care') || lower.includes('home care') || lower.includes('घर पर')) {
     urgency = 'safe';
   }
 
   badge.className = 'urgency-badge ' + urgency;
   urgencyText.textContent = { safe: '🟢 Safe — Home Care', monitor: '🟡 Monitor Closely', urgent: '🔴 See Doctor NOW!' }[urgency];
 
-  // Condition list — show AI-powered message
+  // ---- POSSIBLE CONDITIONS from KB fallback or AI ----
   const condList = document.getElementById('condition-list');
-  condList.innerHTML = `<div class="condition-item"><div class="condition-dot" style="background:#1a9c65"></div><div>AI-powered personalised analysis</div></div>`;
+  // Try to match KB conditions first for accuracy
+  const kbResult = matchSymptoms(lastSymptomQuery || '');
+  if (kbResult && kbResult.conditions && kbResult.conditions.length > 0 && kbResult !== DEFAULT_RESPONSE) {
+    condList.innerHTML = kbResult.conditions.map(c => `
+      <div class="condition-item">
+        <div class="condition-dot" style="background:${c.color}"></div>
+        <div><strong>${c.name}</strong> — ${c.prob}</div>
+      </div>`).join('');
+  } else {
+    // Parse conditions from AI response if KB didn't match
+    condList.innerHTML = `<div class="condition-item"><div class="condition-dot" style="background:#1a9c65"></div><div>AI-powered analysis based on your symptoms</div></div>`;
+  }
 
-  // Parse treatment sections
-  const actList = document.getElementById('action-list');
+  // ---- WHAT TO DO — parse from AI response ----
   let allopathic = '', ayurvedic = '', home = '';
-  const alloMatch = responseText.match(/💊[^🌿🏠💡3\n]*(?:\n[^🌿🏠💡💊3]*)?/);
-  const ayurMatch = responseText.match(/🌿[^💊🏠💡3\n]*(?:\n[^💊🏠💡🌿3]*)?/);
-  const homeMatch = responseText.match(/🏠[^💊🌿💡3\n]*(?:\n[^💊🌿💡🏠3]*)?/);
+  const alloMatch = responseText.match(/💊[^🌿🏠💡\n]*(?:\n[^🌿🏠💡💊\n]*)?/);
+  const ayurMatch = responseText.match(/🌿[^💊🏠💡\n]*(?:\n[^💊🏠💡🌿\n]*)?/);
+  const homeMatch = responseText.match(/🏠[^💊🌿💡\n]*(?:\n[^💊🌿💡🏠\n]*)?/);
   if (alloMatch) allopathic = alloMatch[0].replace('💊', '').trim();
   if (ayurMatch) ayurvedic = ayurMatch[0].replace('🌿', '').trim();
   if (homeMatch) home = homeMatch[0].replace('🏠', '').trim();
 
-  actList.innerHTML = `
-    ${allopathic ? `<div class="action-item allopathic"><div class="action-icon">💊</div><div>${allopathic}</div></div>` : ''}
-    ${ayurvedic ? `<div class="action-item ayurveda"><div class="action-icon">🌿</div><div>${ayurvedic}</div></div>` : ''}
-    ${home ? `<div class="action-item home"><div class="action-icon">🏠</div><div>${home}</div></div>` : ''}
-    ${!allopathic && !ayurvedic && !home ? `<div class="action-item allopathic"><div class="action-icon">🩺</div><div>${responseText.substring(0, 300)}</div></div>` : ''}
-  `;
+  // Fallback to KB actions if AI didn't return structured format
+  const actList = document.getElementById('action-list');
+  if (!allopathic && !ayurvedic && !home && kbResult && kbResult.actions) {
+    actList.innerHTML = kbResult.actions.map(a => `
+      <div class="action-item ${a.type}">
+        <div class="action-icon">${a.icon}</div>
+        <div>${a.text}</div>
+      </div>`).join('');
+  } else {
+    actList.innerHTML = `
+      ${allopathic ? `<div class="action-item allopathic"><div class="action-icon">💊</div><div>${allopathic}</div></div>` : ''}
+      ${ayurvedic ? `<div class="action-item ayurveda"><div class="action-icon">🌿</div><div>${ayurvedic}</div></div>` : ''}
+      ${home ? `<div class="action-item home"><div class="action-icon">🏠</div><div>${home}</div></div>` : ''}
+      ${!allopathic && !ayurvedic && !home ? `<div class="action-item allopathic"><div class="action-icon">🩺</div><div>${responseText.substring(0, 300)}</div></div>` : ''}
+    `;
+  }
 
-  // Extract insight
+  // ---- INSIGHT ----
   const insightMatch = responseText.match(/💡[^\n]*/);
-  document.getElementById('insight-text').textContent = insightMatch
-    ? insightMatch[0].replace('💡', '').replace('Insight:', '').trim()
-    : 'Please consult a qualified doctor if symptoms persist or worsen.';
+  const insightEl = document.getElementById('insight-text');
+  if (insightMatch) {
+    insightEl.textContent = insightMatch[0].replace('💡', '').replace('Insight:', '').trim();
+  } else if (kbResult && kbResult.insight) {
+    insightEl.textContent = kbResult.insight;
+  } else {
+    insightEl.textContent = 'Please consult a qualified doctor if symptoms persist or worsen.';
+  }
 
-  // ---- 3D MODEL SECTION ----
+  // ---- 3D MODEL (BioDigital) ----
   const modelMatch = responseText.match(/3D_MODEL:\s*(.+)/i);
-  const modelSection = document.getElementById('model-section');
+  let modelSection = document.getElementById('model-section');
+  if (!modelSection) {
+    modelSection = document.createElement('div');
+    modelSection.id = 'model-section';
+    document.querySelector('.result-body').appendChild(modelSection);
+  }
   if (modelMatch && modelMatch[1].trim()) {
     const query = modelMatch[1].trim();
-    const searchUrl = `https://human.biodigital.com/discover?q=${encodeURIComponent(query)}`;
+    const searchUrl = `https://human.biodigital.com/search?search=${encodeURIComponent(query)}`;
     modelSection.innerHTML = `
-      <div style="background:linear-gradient(135deg,#0f2027,#1a3a4a);border-radius:var(--radius);padding:18px 20px;margin-top:0;">
+      <div style="background:linear-gradient(135deg,#0f2027,#1a3a4a);border-radius:var(--radius);padding:18px 20px;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
           <div style="width:36px;height:36px;border-radius:10px;background:rgba(124,245,192,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🫀</div>
           <div>
@@ -2185,17 +2293,11 @@ function showAIResult(responseText) {
             <div style="color:rgba(255,255,255,0.6);font-size:12px;">Powered by BioDigital Human</div>
           </div>
         </div>
-        <p style="color:rgba(255,255,255,0.8);font-size:13px;line-height:1.5;margin-bottom:14px;">See a detailed 3D anatomical model related to your symptoms — <strong style="color:#7cf5c0;">${query}</strong>. Tap below to explore interactively.</p>
-        <a href="${searchUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:#2db87a;color:white;padding:10px 20px;border-radius:50px;font-size:13px;font-weight:600;text-decoration:none;">
-          🔬 View 3D Model →
-        </a>
+        <p style="color:rgba(255,255,255,0.8);font-size:13px;line-height:1.5;margin-bottom:14px;">Explore a 3D anatomical model for <strong style="color:#7cf5c0;">${query}</strong>.</p>
+        <a href="${searchUrl}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;background:#2db87a;color:white;padding:10px 20px;border-radius:50px;font-size:13px;font-weight:600;text-decoration:none;">🔬 View 3D Model →</a>
       </div>`;
-    modelSection.style.display = 'block';
-
-    // Also log model link to sheets
-    logToSheets({ type: 'symptom', symptom: lastSymptomQuery, response: responseText.substring(0, 300), modelLink: searchUrl });
+    modelSection.style.marginTop = '16px';
   } else {
-    modelSection.style.display = 'none';
     modelSection.innerHTML = '';
   }
 
@@ -2213,7 +2315,7 @@ async function logToSheets(data) {
       body: JSON.stringify({ ...data, user: currentUser || 'Anonymous' })
     });
   } catch (e) {
-    console.log('Sheets log failed silently:', e);
+    console.log('Sheets log silent fail:', e);
   }
 }
 
@@ -2534,8 +2636,8 @@ async function logData() {
   const sleep = document.getElementById('sleep-val').textContent;
   const water = document.getElementById('water-val').textContent;
   const stress = document.getElementById('stress-val').textContent;
-  const steps = document.getElementById('steps-val').textContent;
-  const screen = document.getElementById('screen-val').textContent;
+  const steps = document.getElementById('steps-val') ? document.getElementById('steps-val').textContent : '';
+  const screen = document.getElementById('screen-val') ? document.getElementById('screen-val').textContent : '';
   const moodBtn = document.querySelector('.mood-btn.selected');
   const mood = moodBtn ? moodBtn.querySelector('span:last-child').textContent : 'Not set';
   btn.textContent = '⏳ Saving...';
